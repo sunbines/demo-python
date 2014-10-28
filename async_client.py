@@ -2,8 +2,7 @@ import asyncore
 import logging
 
 class MessageClient(asyncore.dispatcher):
-    """Sends messages to the server and receives responses.
-    """
+    """Sends messages to the server and receives responses."""
     def __init__(self, host, port, message, chunk_size=1024 ):
         self.host=host
         self.port=port
@@ -13,18 +12,15 @@ class MessageClient(asyncore.dispatcher):
         self.logger = logging.getLogger('Client')
         asyncore.dispatcher.__init__(self)
         self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.logger.debug('connecting to %s', (host, port))
-        self.connect((host, port))
-        return
+        self.logger.debug('connecting to %s', (self.host, self.port))
+        self.connect((self.host, self.port))
     
     def handle_error(self):
         self.logger.info('FAILED TO CONNECT. Retrying -> "%s"',self.to_send )
         self.__init__(self.host,self.port,self.to_send)
-        return 
     
     def handle_connect(self):
         self.logger.debug('client_handle_connect()')
-        return
     
     def handle_close(self):
         self.logger.debug('handle_close()')
@@ -45,7 +41,8 @@ class MessageClient(asyncore.dispatcher):
     def handle_read(self):
         data = self.recv(self.chunk_size)
         if bool(data): 
-            # sending empty data automatically causes self.handle_close(); no need to do it manually:
+            # sending empty data automatically causes self.handle_close();
+            # no need to do it manually:
             # self.handle_close()
             self.logger.debug('handle_read() -> (%d) "%s"', len(data), data)
             print data
@@ -61,7 +58,7 @@ if __name__=='__main__':
     port = 5007
     address = (ip, port) 
     client = MessageClient(ip, port, message='hi, are you the server?')
-#    asyncore.loop()
+    # asyncore.loop()
     # modify the message after 2s
     asyncore.loop(timeout=0.1,count=20) # 20 x 0.1s = 2s 
     client.to_send = 'YOU ARE THE SERVER!'

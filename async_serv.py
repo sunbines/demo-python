@@ -5,8 +5,7 @@ import time
 # Create one or more network channels -- instances of class asyncore.dispatcher. 
 # These channels are automatically added to a global map, used by the loop() function.
 class ReverseEchoServer(asyncore.dispatcher):
-    """Receives connections and establishes handlers for each client.
-    """
+    """Receives connections and establishes handlers for each client."""
     def __init__(self, address):
         self.logger = logging.getLogger('Server')
         asyncore.dispatcher.__init__(self) 
@@ -19,7 +18,6 @@ class ReverseEchoServer(asyncore.dispatcher):
     def timein(self):
         self.start_time = time.time()
         self.logger.debug('init start_time -> %e', self.start_time)
-        return 
 
     def handle_accept(self):
         # Called when a client connects to our socket
@@ -33,11 +31,10 @@ class ReverseEchoServer(asyncore.dispatcher):
     def handle_close(self):
         self.logger.debug('server_handle_close()')
         self.close()
-        return
 
 class ReverseEchoHandler(asyncore.dispatcher):
-    """Handles echoing messages from a single client. 
-    """
+    """Handles echoing messages from a single client. """
+    
     def __init__(self, sock, start_time, chunk_size=1024):
         self.start_time = start_time
         # socket quits after 5 seconds of inactivity
@@ -46,7 +43,6 @@ class ReverseEchoHandler(asyncore.dispatcher):
         self.logger = logging.getLogger('Handler%s' % str(sock.getsockname()))
         asyncore.dispatcher.__init__(self, sock=sock)
         self.data_to_write = []
-        return
     
     def timeout_check(self):
         delta_t = time.time() - self.start_time
@@ -97,13 +93,12 @@ class ReverseEchoHandler(asyncore.dispatcher):
             self.handle_close()
     
     def handle_close(self): 
-        '''server close only gets called if client decides or after timeout'''
+        """server close only gets called if client decides or after timeout"""
         self.logger.debug('handle_close()')
         self.close()
 
 if __name__=='__main__':
     import socket
-
     logging.basicConfig(level=logging.DEBUG,
                         format='%(name)s: %(message)s',
                         )
