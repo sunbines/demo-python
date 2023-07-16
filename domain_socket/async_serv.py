@@ -1,19 +1,19 @@
-import asyncore
+import asyncore_debug
 import logging
 import time
 
-# Create one or more network channels -- instances of class asyncore.dispatcher. 
-# These channels are automatically added to a global map, used by the loop() function.
-class ReverseEchoServer(asyncore.dispatcher):
+
+class ReverseEchoServer(asyncore_debug.dispatcher):
     """Receives connections and establishes handlers for each client."""
     def __init__(self, address):
         self.logger = logging.getLogger('Server')
-        asyncore.dispatcher.__init__(self) 
-        self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+        asyncore_debug.dispatcher.__init__(self) 
+        self.create_socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self.bind(address) 
         self.address = self.socket.getsockname() 
         self.logger.debug('binding to %s', self.address)
         self.listen(1)
+        self.set_reuse_addr()
 
     def timein(self):
         self.start_time = time.time()
@@ -32,16 +32,16 @@ class ReverseEchoServer(asyncore.dispatcher):
         self.logger.debug('server_handle_close()')
         self.close()
 
-class ReverseEchoHandler(asyncore.dispatcher):
+class ReverseEchoHandler(asyncore_debug.dispatcher):
     """Handles echoing messages from a single client. """
     
     def __init__(self, sock, start_time, chunk_size=1024):
         self.start_time = start_time
         # socket quits after 5 seconds of inactivity
-        self.timeout = 5 
+        self.timeout = 600
         self.chunk_size = chunk_size
         self.logger = logging.getLogger('Handler%s' % str(sock.getsockname()))
-        asyncore.dispatcher.__init__(self, sock=sock)
+        asyncore_debug.dispatcher_with_send.__init__(self, sock=sock)
         self.data_to_write = []
     
     def timeout_check(self):
@@ -69,11 +69,14 @@ class ReverseEchoHandler(asyncore.dispatcher):
             sent = self.send("")
             self.handle_close()
             return
-        data = self.data_to_write.pop()
-        sent = self.send(data[:self.chunk_size])
+        data1 = self.data_to_write.pop()
+        data_temp = data1[:self.chunk_size]
+        data_send = data_temp.encode()
+        sent = self.send(data_send)
+        print(sent)
         self.start_time = time.time()
-        if sent < len(data):
-            remaining = data[sent:]
+        if sent < len(data1):
+            remaining = data1[sent:]
             self.data_to_write.append(remaining)
             self.logger.debug('handle_write() -> (%d) "%s"', sent, data[:sent])
 
@@ -85,7 +88,9 @@ class ReverseEchoHandler(asyncore.dispatcher):
     
     def handle_read(self):
         """Read an incoming message from the client and put it into our outgoing queue."""
-        data = self.recv(self.chunk_size)
+        data1 = self.recv(self.chunk_size)
+        print(data1.decode())
+        data = data1.decode()
         self.logger.debug('handle_read() -> (%d) "%s"', len(data), data)
         data = self.reverse(data)
         self.data_to_write.insert(0, data)
@@ -99,12 +104,8 @@ class ReverseEchoHandler(asyncore.dispatcher):
 
 if __name__=='__main__':
     import socket
-    logging.basicConfig(level=logging.DEBUG,
-                        format='%(name)s: %(message)s',
-                        )
+    logging.basicConfig(level=logging.DEBUG, format='%(name)s: %(message)s', )
     log = logging.getLogger('main')
-    ip = '127.0.0.1' 
-    port = 5007
-    address = (ip, port) # port 0 means the kernel gives port 
+    address = "./socket.asok" 
     server = ReverseEchoServer(address)
-    asyncore.loop(timeout=1) # checks all client's readable/writable every second
+    asyncore_debug.loop() 
